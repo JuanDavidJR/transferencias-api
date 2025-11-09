@@ -106,6 +106,23 @@ public class BancoController {
                 .body(new ErrorResponse("Cuenta no encontrada", e.getMessage())));
     }
 
+    @PutMapping("/cuentas/{numeroCuenta}")
+    public Mono<ResponseEntity<CuentaDTO>> actualizarCuenta(
+            @PathVariable String numeroCuenta,
+            @Valid @RequestBody Cuenta cuentaActualizada
+    ) {
+        return cuentaService.actualizarCuenta(numeroCuenta, cuentaActualizada)
+                .map(ResponseEntity::ok)
+                .onErrorResume(e -> Mono.just(ResponseEntity.notFound().build()));
+    }
+
+    @DeleteMapping("/cuentas/{numeroCuenta}")
+    public Mono<ResponseEntity<Void>> eliminarCuenta(@PathVariable String numeroCuenta) {
+        return cuentaService.eliminarCuenta(numeroCuenta)
+                .then(Mono.just(ResponseEntity.noContent().<Void>build()))
+                .onErrorResume(e -> Mono.just(ResponseEntity.notFound().build()));
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public Mono<ResponseEntity<ErrorResponse>> manejarArgumentoIlegal(
             IllegalArgumentException e

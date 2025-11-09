@@ -71,4 +71,45 @@ public class CuentaService {
                 .activa(cuenta.getActiva())
                 .build();
     }
+    public Mono<CuentaDTO> actualizarCuenta(String numeroCuenta, Cuenta cuentaActualizada) {
+        log.info("Actualizando cuenta: {}", numeroCuenta);
+
+        return cuentaRepository.findByNumeroCuenta(numeroCuenta)
+                .flatMap(cuentaExistente -> {
+                    // Actualizar solo los campos que vienen en la solicitud
+                    if (cuentaActualizada.getNombreTitular() != null) {
+                        cuentaExistente.setNombreTitular(cuentaActualizada.getNombreTitular());
+                    }
+                    if (cuentaActualizada.getEmail() != null) {
+                        cuentaExistente.setEmail(cuentaActualizada.getEmail());
+                    }
+                    if (cuentaActualizada.getSaldo() != null) {
+                        cuentaExistente.setSaldo(cuentaActualizada.getSaldo());
+                    }
+                    if (cuentaActualizada.getMoneda() != null) {
+                        cuentaExistente.setMoneda(cuentaActualizada.getMoneda());
+                    }
+                    if (cuentaActualizada.getActiva() != null) {
+                        cuentaExistente.setActiva(cuentaActualizada.getActiva());
+                    }
+
+                    cuentaExistente.setUltimaActualizacion(LocalDateTime.now());
+
+                    return cuentaRepository.save(cuentaExistente)
+                            .map(this::convertirADTO);
+                })
+                .switchIfEmpty(Mono.error(
+                        new CuentaNoEncontradaException("Cuenta no encontrada: " + numeroCuenta)
+                ));
+    }
+
+    public Mono<Void> eliminarCuenta(String numeroCuenta) {
+        log.info("Eliminando cuenta: {}", numeroCuenta);
+
+        return cuentaRepository.findByNumeroCuenta(numeroCuenta)
+                .flatMap(cuenta -> cuentaRepository.deleteById(cuenta.getId()))
+                .switchIfEmpty(Mono.error(
+                        new CuentaNoEncontradaException("Cuenta no encontrada: " + numeroCuenta)
+                ));
+    }
 }
